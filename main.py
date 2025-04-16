@@ -1,16 +1,19 @@
 import tkinter as tk
 from tkinter import messagebox
-import index
-#USERS
+from index import *
+import empleado
 
+#USERS
 usuarios=["admin"]
 passwords=["1234"]
-
+empleados=[]
 #COLORES
 azul="lightblue"
 
+root=None
 def inicio():
     #VENTANA
+    global root
     root=tk.Tk()
     root.title("Iniciar sesion")
     ancho_ventana=400
@@ -61,7 +64,8 @@ def comprobarUsuario(user,pssw):
     if usuario not in usuarios or password not in passwords:
         messagebox.showerror("ERROR","Contraseña o usuario invalido")
     else:
-        print("SI")
+        root.destroy()
+        Cuisinecore()
 
 if __name__== "__main__":
     inicio()
