@@ -12,23 +12,19 @@ class Cuisinecore:
         confirmacion=messagebox.askquestion("CONFIRMAR","Estas seguro que deseas salir?")
 
         if confirmacion == "yes":
-            self.root.quit()
+            self.root.destroy()#cambio
         else:
             return
         
     def agregarProducto(self):
         try:
-            nombre=self.entryNombreEmpleado.get()
-            pssw=self.entryContraseña.get()
-            psswC=self.entryConfirmar.get()
-            edad=int(self.entryEdad.get())
-            if not pssw or not psswC or not nombre or not edad:
+            nombre=self.entryNombreProducto.get()
+            costo=float(self.entryCostoProducto.get())
+            tipo=self.entryTipo.get()
+            porcion=int(self.entryPorcion.get())
+            if not nombre or not costo or not tipo or not porcion:
                 messagebox.showerror("ERROR","Ingresa una datos validos")
                 return
-            if pssw != psswC:
-                messagebox.showerror("ERROR","La contraseña no coincide")
-                return
-           
         except:
             messagebox.showerror("ERROR","Algo salio mal :/")
             return
@@ -36,16 +32,17 @@ class Cuisinecore:
 
         if conn and cursor:
             try:
-                cursor.execute("INSERT INTO empleado (nombre, contraseña, edad) VALUES (%s, %s, %s) RETURNING id", 
-                    (nombre, pssw, edad))
+                cursor.execute("INSERT INTO producto (nombre, costo,tipo,porcion) VALUES (%s, %s, %s,%s) RETURNING clave", 
+                    (nombre, costo, tipo,porcion))
                 conn.commit()
                 messagebox.showinfo("Exito", "Empleado agregado correctamente")
                 id=cursor.fetchone()[0]
-                self.treeviewEmpleados.insert("", "end", values=(nombre, edad, id))
-                self.entryNombreEmpleado.delete(0, tk.END)
-                self.entryContraseña.delete(0, tk.END)
-                self.entryConfirmar.delete(0, tk.END)
-                self.entryEdad.delete(0, tk.END)
+                self.treeviewProductos.insert("", "end", values=(nombre, costo, tipo,porcion,id))
+                self.entryNombreProducto.delete(0, tk.END)
+                self.entryCostoProducto.delete(0, tk.END)
+                self.entryTipo.set('')
+                self.entryPorcion.delete(0, tk.END)
+
             except psycopg2.Error as e:
                 messagebox.showerror("Error","Error al consultar la base de datos: {e}")
             finally:
@@ -93,23 +90,23 @@ class Cuisinecore:
             messagebox.showerror("Error","No se pudo conectar a la base de datos")
 
     def eliminarProducto(self):
-        seleccion=self.treeviewEmpleados.selection()
+        seleccion=self.treeviewProductos.selection()
         if not seleccion:
             messagebox.showerror("Error","No hay ninguna seleccion para eliminar")
             return
         
         conn,cursor = conexion()
-        claveEmpleado=""
+        claveProducto=""
         if conn and cursor:
             try:
                 for item in seleccion:
-                    valores=self.treeviewEmpleados.item(item,"values")
-                    claveEmpleado=valores[2]
-                cursor.execute("DELETE from empleado WHERE id = %s",(claveEmpleado,))
+                    valores=self.treeviewProductos.item(item,"values")
+                    claveProducto=valores[4]
+                cursor.execute("DELETE from producto WHERE clave = %s",(claveProducto,))
                 conn.commit()
                 messagebox.showinfo("Exito", "Producto eliminado correctamente")
-                self.treeviewEmpleados.delete(*self.treeviewEmpleados.get_children())
-                self.cargar_datosEmpleados()
+                self.treeviewProductos.delete(*self.treeviewProductos.get_children())
+                self.cargar_datosProductos()
                 
             except psycopg2.Error as e:
                 messagebox.showerror("Error","Error al consultar la base de datos: {e}")
@@ -145,6 +142,27 @@ class Cuisinecore:
         else:
             messagebox.showerror("Error","No se pudo conectar a la base de datos")
         
+    def cargar_datosProductos(self):
+        # Conectar
+        conn, cursor = conexion()
+
+        if conn and cursor:
+            try:
+                cursor.execute("SELECT nombre, costo,tipo,porcion, clave FROM producto") 
+                rows = cursor.fetchall()
+
+                # Insertar
+                for row in rows:
+                    self.treeviewProductos.insert("", "end", text=row[1], values=(row[0], row[1], row[2],row[3],row[4]))
+
+            except psycopg2.Error as e:
+                messagebox.showerror("Error","Error al consultar la base de datos: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+        else:
+            messagebox.showerror("Error","No se pudo conectar a la base de datos")
+
     def cargar_datosEmpleados(self):
         # Conectar
         conn, cursor = conexion()
@@ -192,7 +210,7 @@ class Cuisinecore:
         #self.tabMenu.place(x=50,y=125,height=700,width=1450)
         self.tabMenu.pack(fill="both",padx=50,pady=80)
 
-        #Pestaña1 ALTA PRODUCTO
+        #Pestaña1 PRODUCTO
         producto=tk.Frame(self.tabMenu)
         producto.config(bg=self.color3)
         self.labelAgregarProducto = tk.Label(producto, text="Agregar un producto:", font=("Helvatica", 14,"bold"))
@@ -214,24 +232,18 @@ class Cuisinecore:
         self.labelTipo=tk.Label(producto,text="Tipo de producto: ",font=("Times", 12))
         self.labelTipo.config(bg="lightblue")
         self.labelTipo.place(x=100,y=200)
-        self.entryTipo=tk.Entry(producto)
+        self.entryTipo=ttk.Combobox(producto,state="readonly",values=("Entrada","Platillo","Bebida"),width=17)
         self.entryTipo.place(x=275,y=200)
 
         self.labelPorcion=tk.Label(producto,text="Porcion del producto: ",font=("Times", 12))
         self.labelPorcion.config(bg="lightblue")
         self.labelPorcion.place(x=100,y=250)
-        self.entrylPorcion=tk.Entry(producto)
-        self.entrylPorcion.place(x=275,y=250)
-
-        self.labelClaveProducto=tk.Label(producto,text="Clave del producto: ",font=("Times", 12))
-        self.labelClaveProducto.config(bg="lightblue")
-        self.labelClaveProducto.place(x=100,y=300)
-        self.entryClaveProducto=tk.Entry(producto)
-        self.entryClaveProducto.place(x=275,y=300)
+        self.entryPorcion=tk.Entry(producto)
+        self.entryPorcion.place(x=275,y=250)
 
         self.botonAgregarProducto=tk.Button(producto,text="AGREGAR",command=self.agregarProducto)
         self.botonAgregarProducto.config(bg="lightgreen")
-        self.botonAgregarProducto.place(x=420,y=400)
+        self.botonAgregarProducto.place(x=215,y=300)
 
         self.treeviewProductos = ttk.Treeview(producto, columns=("Nombre", "Precio", "Tipo","Porcion","Clave"),show="headings",height=20)
         self.treeviewProductos.place(x=420,y=100)
@@ -253,7 +265,7 @@ class Cuisinecore:
         self.botonEliminarProducto.place(x=915,y=550)
         
         self.treeviewProductos.delete(*self.treeviewProductos.get_children())
-        #self.cargar_datosProductos()
+        self.cargar_datosProductos()
 
         #Pestaña2 MESAS
         mesas=tk.Frame(self.tabMenu)
@@ -314,6 +326,7 @@ class Cuisinecore:
         
         self.treeviewEmpleados.delete(*self.treeviewEmpleados.get_children())
         self.cargar_datosEmpleados()
+        
         #NOMBRES SUBMENUS
         self.tabMenu.add(producto, text="Productos")
         self.tabMenu.add(mesas, text="Mesas")
