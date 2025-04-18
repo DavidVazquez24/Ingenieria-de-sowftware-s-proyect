@@ -3,10 +3,10 @@ import psycopg2
 def conexion():
     try:
         conn = psycopg2.connect(
-            host="localhost",
+            host="cuisinecore-db.cr622owiwiy7.us-east-2.rds.amazonaws.com",
             database="Cuisinecore",
             user="postgres",
-            password="2004",
+            password="cuisine09core.",
             port="5432"
         )
         cursor = conn.cursor()

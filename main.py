@@ -28,7 +28,7 @@ def inicio():
     root.config(bg=azul)
     
     #TITULO
-    labelTitulo=tk.Label(root,text="CRUISICORE")
+    labelTitulo=tk.Label(root,text="CUISINE CORE")
     labelTitulo.config(font=("Arial",18),bg=azul)
     labelTitulo.place(x=120,y=30)
 

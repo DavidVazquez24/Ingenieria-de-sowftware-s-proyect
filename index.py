@@ -38,7 +38,7 @@ class Cuisinecore:
                 cursor.execute("INSERT INTO producto (nombre, costo,tipo,porcion) VALUES (%s, %s, %s,%s) RETURNING clave", 
                     (nombre, costo, tipo,porcion))
                 conn.commit()
-                messagebox.showinfo("Exito", "Empleado agregado correctamente")
+                messagebox.showinfo("Exito", "Producto agregado correctamente")
                 id=cursor.fetchone()[0]
                 self.treeviewProductos.insert("", "end", values=(nombre, costo, tipo,porcion,id))
                 self.entryNombreProducto.delete(0, tk.END)
@@ -134,7 +134,7 @@ class Cuisinecore:
                     claveEmpleado=valores[2]
                 cursor.execute("DELETE from empleado WHERE id = %s",(claveEmpleado,))
                 conn.commit()
-                messagebox.showinfo("Exito", "Producto eliminado correctamente")
+                messagebox.showinfo("Exito", "Empleado eliminado correctamente")
                 self.treeviewEmpleados.delete(*self.treeviewEmpleados.get_children())
                 self.cargar_datosEmpleados()
                 
