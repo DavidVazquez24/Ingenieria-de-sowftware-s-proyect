@@ -2,15 +2,16 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 from conexion import *
-from PIL import Image, ImageTk
+from mesa import Mesa
+import customtkinter as ctk
 
 class Cuisinecore:
     color1="lightblue"
     color2="lightskyblue"
     color3="skyblue"
     color4="lightsteelblue"
-    numeroMesas=2
-    
+    numeroMesas=31
+
     def salir(self):
         confirmacion=messagebox.askquestion("CONFIRMAR","Estas seguro que deseas salir?")
 
@@ -187,7 +188,10 @@ class Cuisinecore:
                 conn.close()
         else:
             messagebox.showerror("Error","No se pudo conectar a la base de datos")
-        
+    
+    def actualizar_scroll(self,event):
+        self.canva.configure(scrollregion=self.canva.bbox("all"))
+    
     def __init__(self):
         
         #VENTANA
@@ -274,43 +278,36 @@ class Cuisinecore:
         #Pestaña2 MESAS
         mesas=tk.Frame(self.tabMenu)
         mesas.config(bg=self.color3)
+
         self.labelMesa = tk.Label(mesas, text="Modificar mesa:", font=("Helvatica", 14,"bold"))
         self.labelMesa.config(bg=self.color3)
         self.labelMesa.place(y=25,x=605)
+        
+        self.barra = ttk.Scrollbar(mesas, orient="vertical")
+        self.barra.pack(side="right", fill="y")
+        self.canva = tk.Canvas(mesas, bg=self.color1, yscrollcommand=self.barra.set)
+        self.canva.pack(side="left", fill="both", expand=True)
+        self.barra.config(command=self.canva.yview)
 
+        self.frame2 = tk.Frame(self.canva, bg="lightblue")
+        self.frame2.pack(fill="both", expand=True)
+        self.canva.create_window((0, 0), window=self.frame2, anchor="nw")
+
+        self.frame2.bind("<Configure>",self.actualizar_scroll)
+        self.canva.bind_all("<MouseWheel>", lambda e: self.canva.yview_scroll(int(-1*(e.delta/120)), "units"))
         #MESAS CONFIG
-        #DISEÑO
-        anchoIcono=54
-        largoIcono=45
-        iconoOrdenar = Image.open("img/ordenar.png")
-        iconoRedimensionado = iconoOrdenar.resize((anchoIcono, largoIcono))  
-        self.iconoOrdenar= ImageTk.PhotoImage(iconoRedimensionado)
+        contador=0
+        terminado=False
 
-        iconoOrdenar = Image.open("img/cuenta.png")
-        iconoRedimensionado = iconoOrdenar.resize((anchoIcono, largoIcono))  
-        self.iconoCuenta= ImageTk.PhotoImage(iconoRedimensionado)
-
-        iconoOrdenar = Image.open("img/reserva.png")
-        iconoRedimensionado = iconoOrdenar.resize((anchoIcono, largoIcono))  
-        self.iconoReserva= ImageTk.PhotoImage(iconoRedimensionado)
-        
-        self.frameMesa=tk.Frame(mesas,width=200,height=150,bd=10,relief="ridge",bg=self.color4)
-        self.frameMesa.place(x=150,y=80)
-
-        self.labelNumeroMesa=tk.Label(self.frameMesa,text="MESA 1",bg=self.color4)
-        self.labelNumeroMesa.place(x=70,y=40)
-
-        self.frameBotones=tk.Frame(self.frameMesa,width=180,height=50)
-        self.frameBotones.place(x=0,y=80)
-
-        self.botonOrdenar=tk.Button(self.frameBotones,image=self.iconoOrdenar)#falta command
-        self.botonOrdenar.grid(row=0,column=0)
-
-        self.botonCuenta=tk.Button(self.frameBotones,image=self.iconoCuenta)#falta command
-        self.botonCuenta.grid(row=0,column=1)
-        
-        self.botonReserva=tk.Button(self.frameBotones,image=self.iconoReserva)#falta command
-        self.botonReserva.grid(row=0,column=2)
+        for j in range(10):
+            for i in range(5):
+                self.mesa=Mesa(self.frame2,contador+1,j,i)
+                contador+=1
+                if contador==self.numeroMesas:
+                    terminado=True
+                    break
+            if terminado:
+                break
 
         #Pestaña3 EMPLEADOS
         empleados=tk.Frame(self.tabMenu)
@@ -364,7 +361,7 @@ class Cuisinecore:
         
         self.treeviewEmpleados.delete(*self.treeviewEmpleados.get_children())
         self.cargar_datosEmpleados()
-        
+
         #NOMBRES SUBMENUS
         self.tabMenu.add(producto, text="Productos")
         self.tabMenu.add(mesas, text="Mesas")
