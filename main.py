@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox
 from index import *
 from PIL import Image, ImageTk
-import empleado
 
 #USERS
 usuarios=["admin"]
@@ -33,7 +32,7 @@ def inicio():
     labelTitulo.place(x=120,y=30)
 
     #IMAGEN
-    imagen_original = Image.open("img/Remy.png")
+    imagen_original = Image.open("img/remy.png")
     imagen_redimensionada = imagen_original.resize((100, 80))  
     imagen = ImageTk.PhotoImage(imagen_redimensionada)
 

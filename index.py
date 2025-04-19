@@ -13,7 +13,7 @@ class Cuisinecore:
     numeroMesas=31
 
     def salir(self):
-        confirmacion=messagebox.askquestion("CONFIRMAR","Estas seguro que deseas salir?")
+        confirmacion=messagebox.askquestion("CONFIRMAR","¿Estás seguro que deseas salir?")
 
         if confirmacion == "yes":
             self.root.destroy()#cambio
@@ -61,8 +61,9 @@ class Cuisinecore:
             pssw=self.entryContraseña.get()
             psswC=self.entryConfirmar.get()
             edad=int(self.entryEdad.get())
-            if not pssw or not psswC or not nombre or not edad:
-                messagebox.showerror("ERROR","Ingresa una datos validos")
+            rol=self.entryRol.get()
+            if not pssw or not psswC or not nombre or not edad or not rol:
+                messagebox.showerror("ERROR","Ingresa datos validos")
                 return
             if pssw != psswC:
                 messagebox.showerror("ERROR","La contraseña no coincide")
@@ -71,22 +72,23 @@ class Cuisinecore:
         except:
             messagebox.showerror("ERROR","Algo salio mal :/")
             return
-        conn,cursor = conexion()
+        conn, cursor=conexion()
 
         if conn and cursor:
             try:
-                cursor.execute("INSERT INTO empleado (nombre, contraseña, edad) VALUES (%s, %s, %s) RETURNING id", 
-                    (nombre, pssw, edad))
+                cursor.execute("INSERT INTO empleado (nombre, contraseña, edad, rol) VALUES (%s, %s, %s, %s) RETURNING id", 
+                              (nombre, pssw, edad, rol))
                 conn.commit()
                 messagebox.showinfo("Exito", "Empleado agregado correctamente")
                 id=cursor.fetchone()[0]
-                self.treeviewEmpleados.insert("", "end", values=(nombre, edad, id))
+                self.treeviewEmpleados.insert("", "end", values=(nombre, edad, id, rol))
                 self.entryNombreEmpleado.delete(0, tk.END)
                 self.entryContraseña.delete(0, tk.END)
                 self.entryConfirmar.delete(0, tk.END)
                 self.entryEdad.delete(0, tk.END)
+                self.entryRol.set('')
             except psycopg2.Error as e:
-                messagebox.showerror("Error","Error al consultar la base de datos: {e}")
+                messagebox.showerror("Error", f"Error al consultar la base de datos: {e}")
             finally:
                 cursor.close()
                 conn.close()
@@ -96,7 +98,7 @@ class Cuisinecore:
     def eliminarProducto(self):
         seleccion=self.treeviewProductos.selection()
         if not seleccion:
-            messagebox.showerror("Error","No hay ninguna seleccion para eliminar")
+            messagebox.showerror("Error","No hay ninguna selección para eliminar")
             return
         
         conn,cursor = conexion()
@@ -123,7 +125,7 @@ class Cuisinecore:
     def eliminarEmpleado(self):
         seleccion=self.treeviewEmpleados.selection()
         if not seleccion:
-            messagebox.showerror("Error","No hay ninguna seleccion para eliminar")
+            messagebox.showerror("Error","No hay ninguna selección para eliminar")
             return
         
         conn,cursor = conexion()
@@ -149,7 +151,7 @@ class Cuisinecore:
         
     def cargar_datosProductos(self):
         # Conectar
-        conn, cursor = conexion()
+        conn, cursor=conexion()
 
         if conn and cursor:
             try:
@@ -161,7 +163,7 @@ class Cuisinecore:
                     self.treeviewProductos.insert("", "end", text=row[1], values=(row[0], row[1], row[2],row[3],row[4]))
 
             except psycopg2.Error as e:
-                messagebox.showerror("Error","Error al consultar la base de datos: {e}")
+                messagebox.showerror("Error", f"Error al consultar la base de datos: {e}")
             finally:
                 cursor.close()
                 conn.close()
@@ -174,15 +176,16 @@ class Cuisinecore:
 
         if conn and cursor:
             try:
-                cursor.execute("SELECT nombre, edad, id FROM empleado") 
+                cursor.execute("SELECT nombre, edad, id, rol FROM empleado") 
                 rows = cursor.fetchall()
+                print(rows)
 
                 # Insertar
                 for row in rows:
-                    self.treeviewEmpleados.insert("", "end", text=row[1], values=(row[0], row[1], row[2]))
+                    self.treeviewEmpleados.insert("", "end", text=row[1], values=(row[0], row[1], row[2], row[3]))
 
             except psycopg2.Error as e:
-                messagebox.showerror("Error","Error al consultar la base de datos: {e}")
+                messagebox.showerror("Error", f"Error al consultar la base de datos: {e}")
             finally:
                 cursor.close()
                 conn.close()
@@ -243,7 +246,7 @@ class Cuisinecore:
         self.entryTipo=ttk.Combobox(producto,state="readonly",values=("Entrada","Platillo","Bebida"),width=17)
         self.entryTipo.place(x=275,y=200)
 
-        self.labelPorcion=tk.Label(producto,text="Porcion del producto: ",font=("Times", 12))
+        self.labelPorcion=tk.Label(producto,text="Porción del producto: ",font=("Times", 12))
         self.labelPorcion.config(bg="lightblue")
         self.labelPorcion.place(x=100,y=250)
         self.entryPorcion=tk.Entry(producto)
@@ -265,10 +268,10 @@ class Cuisinecore:
         self.treeviewProductos.heading("Nombre", text="Nombre")  
         self.treeviewProductos.heading("Precio", text="Precio")
         self.treeviewProductos.heading("Tipo", text="Tipo")
-        self.treeviewProductos.heading("Porcion", text="Porcion")
+        self.treeviewProductos.heading("Porcion", text="Porción")
         self.treeviewProductos.heading("Clave", text="Clave")
 
-        self.botonEliminarProducto=tk.Button(producto,text="ELIMINAR SELECCION",command=self.eliminarProducto)
+        self.botonEliminarProducto=tk.Button(producto,text="ELIMINAR SELECCIÓN",command=self.eliminarProducto)
         self.botonEliminarProducto.config(bg="red")
         self.botonEliminarProducto.place(x=915,y=530)
         
@@ -298,10 +301,11 @@ class Cuisinecore:
         #MESAS CONFIG
         contador=0
         terminado=False
+        self.listaMesas=[]
 
         for j in range(10):
             for i in range(5):
-                self.mesa=Mesa(self.frame2,contador+1,j,i)
+                self.listaMesas.append(Mesa(self.frame2,contador+1,j,i))
                 contador+=1
                 if contador==self.numeroMesas:
                     terminado=True
@@ -340,20 +344,28 @@ class Cuisinecore:
         self.entryEdad=tk.Entry(empleados)
         self.entryEdad.place(x=425,y=250)
 
+        self.labelRol=tk.Label(empleados,text="Rol del empleado: ",font=("Times", 12))
+        self.labelRol.config(bg="lightblue")
+        self.labelRol.place(x=250,y=300)
+        self.entryRol=ttk.Combobox(empleados,state="readonly",values=("Administrador","Mesero","Cajero"),width=17)
+        self.entryRol.place(x=425,y=300)
+
         self.botonAgregarEmpleado=tk.Button(empleados,text="AGREGAR",command=self.agregarEmpleado)
         self.botonAgregarEmpleado.config(bg="lightgreen")
-        self.botonAgregarEmpleado.place(x=370,y=300)
+        self.botonAgregarEmpleado.place(x=370,y=350)
 
-        self.treeviewEmpleados = ttk.Treeview(empleados, columns=("Nombre", "Edad", "ID"),show="headings",height=20)
+        self.treeviewEmpleados=ttk.Treeview(empleados, columns=("Nombre", "Edad", "ID", "Rol"),show="headings",height=20)
         self.treeviewEmpleados.place(x=620,y=100)
 
         self.treeviewEmpleados.column("Nombre", width=200,anchor="center")
-        self.treeviewEmpleados.column("Edad", width=300,anchor="center")
-        self.treeviewEmpleados.column("ID", width=200,anchor="center")
+        self.treeviewEmpleados.column("Edad", width=150,anchor="center")
+        self.treeviewEmpleados.column("ID", width=150,anchor="center")
+        self.treeviewEmpleados.column("Rol", widt=200,anchor="center")
 
         self.treeviewEmpleados.heading("Nombre", text="Nombre")  
         self.treeviewEmpleados.heading("Edad", text="Edad")
         self.treeviewEmpleados.heading("ID", text="ID")
+        self.treeviewEmpleados.heading("Rol", text="Rol")
 
         self.botonEliminarEmpleado=tk.Button(empleados,text="ELIMINAR SELECCION",command=self.eliminarEmpleado)
         self.botonEliminarEmpleado.config(bg="red")
